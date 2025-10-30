@@ -1,26 +1,348 @@
-@import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg: radial-gradient(circle at top, #141824 0%, #0a0c12 40%, #05060a 80%);
+  --card: rgba(15, 18, 26, 0.75);
+  --border: rgba(255, 255, 255, 0.09);
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.15);
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+}
+
+.topbar {
+  margin-bottom: 18px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.topbar p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+
+.main-layout {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.left-panel {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.right-panel {
+  flex: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab.active {
+  background: var(--accent-soft);
+  border-color: rgba(120, 188, 255, 0.4);
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px 18px;
+  backdrop-filter: blur(12px);
+}
+
+.card.big {
+  flex: 1;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.status-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.presentation {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.presenting {
+  font-size: 1.1rem;
+}
+
+.recall {
+  font-size: 1.1rem;
+}
+
+.feedback {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.idle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  background: var(--accent);
+  border: none;
+  color: #020617;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.controls button:not(:disabled):hover {
+  filter: brightness(1.03);
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+  gap: 6px;
+}
+
+.button-grid button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px 0;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.button-grid button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.text-input-form {
+  display: flex;
+  gap: 6px;
+}
+
+.text-input-form input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: #fff;
+}
+
+.text-input-form button {
+  background: rgba(96, 165, 250, 0.25);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  border-radius: 10px;
+  color: #fff;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.results-list li {
+  padding: 6px 8px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  font-size: 0.8rem;
+}
+
+.results-list li.res-ok {
+  border-left: 4px solid rgba(74, 222, 128, 0.5);
+}
+
+.results-list li.res-bad {
+  border-left: 4px solid rgba(248, 113, 113, 0.5);
+}
+
+.res-header {
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.condition-switch {
+  display: flex;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 950px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  .right-panel {
+    order: 2;
+  }
+  
+.name-box {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.name-box label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.name-box input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 4px 6px;
+  color: #fff;
+  min-width: 140px;
+}
+
+.report-btn {
+  margin-top: 12px;
+  width: 100%;
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  border-radius: 10px;
+  color: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.card textarea {
+  width: 100%;
+  min-height: 80px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 6px 8px;
+  color: #fff;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+  backdrop-filter: blur(4px);
+}
+
+.overlay-content {
+  background: rgba(15, 18, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 20px 22px;
+  width: min(460px, 92vw);
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.bar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: linear-gradient(90deg, #60a5fa, #38bdf8);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.feedback-box {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-top: 12px;
+}
+
 }
