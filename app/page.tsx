@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 const digitPool = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-const syllablePool = ["ba", "da", "ga", "pa", "ta", "ka"];
+const syllablePool = ["Bein", "Wein", "Pein", "Sein", "Mein", "Dein"];
 const shortWords = ["Hund", "Boot", "Haus", "Stuhl", "Bus", "Berg", "Zug", "Fisch", "Apfel", "Uhr", "Hand", "Buch", "Kind"];
 const longWords = ["Akademie", "Telefonnummer", "Melodie", "Banane", "Fotografie", "Universität", "Regenbogen", "Schokolade", "Straßenbahn", "Kreisverkehr"];
 
