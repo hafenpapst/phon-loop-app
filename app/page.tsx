@@ -171,7 +171,7 @@ async function presentSequence(seq: string[]) {
     <div className="app-shell">
       <header className="topbar">
         <div>
-          <h1>Phonetische Schleife – Demo</h1>
+          <h1>Phonologische Schleife – Teste dein Arbeitsgedächtnis</h1>
           <p>3 Aufgaben: Zahlenspanne, Silben, Wortlänge / Ähnlichkeit</p>
         </div>
         <div className="name-box">

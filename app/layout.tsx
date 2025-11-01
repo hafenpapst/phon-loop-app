@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Phonetische Schleife - Corsi & Sprachgedächtnis Test",
+  title: "Phonologische Schleife - Corsi & Sprachgedächtnis Test",
   description: "Online-Test zur phonologischen Schleife und auditiven Merkspanne",
 };
 
