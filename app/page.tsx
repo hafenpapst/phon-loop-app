@@ -68,14 +68,19 @@ export default function PhonologicalApp() {
     });
   }
 
-  async function presentSequence(seq: string[]) {
-    setIsSpeaking(true);
-    for (const item of seq) {
-      await speakItem(item);
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    setIsSpeaking(false);
+async function presentSequence(seq: string[]) {
+  setIsSpeaking(true);
+
+  // NEU: kurze Vorbereitungs-Pause vor der ERSTEN Ansage
+  await new Promise((r) => setTimeout(r, 1500)); // 1500 = 1,5 Sekunden, kannst du auf 2000 stellen
+
+  for (const item of seq) {
+    await speakItem(item);
+    await new Promise((r) => setTimeout(r, 400));
   }
+  setIsSpeaking(false);
+}
+
 
   async function startTrial() {
     if (phase !== "idle" && phase !== "feedback") return;
