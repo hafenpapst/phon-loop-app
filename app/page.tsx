@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 
 const digitPool = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const syllablePool = ["ba", "da", "ga", "pa", "ta", "ka"];
-const shortWords = ["Hund", "Boot", "Haus", "Stuhl", "Bus", "Berg"];
-const longWords = ["Akademie", "Telefonnummer", "Melodie", "Banane", "Fotografie", "Universität"];
+const shortWords = ["Hund", "Boot", "Haus", "Stuhl", "Bus", "Berg", "Zug", "Fisch", "Apfel", "Uhr", "Hand", "Buch", "Kind"];
+const longWords = ["Akademie", "Telefonnummer", "Melodie", "Banane", "Fotografie", "Universität", "Regenbogen", "Schokolade", "Straßenbahn", "Kreisverkehr"];
 
 type TestType = "digits" | "syllables" | "wordlength";
 
@@ -80,7 +80,6 @@ async function presentSequence(seq: string[]) {
   }
   setIsSpeaking(false);
 }
-
 
   async function startTrial() {
     if (phase !== "idle" && phase !== "feedback") return;
