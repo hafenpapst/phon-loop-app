@@ -4,8 +4,33 @@ import React, { useState, useEffect } from "react";
 
 const digitPool = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const syllablePool = ["Bein", "Wein", "Pein", "Sein", "Mein", "Dein"];
-const shortWords = ["Hund", "Boot", "Haus", "Stuhl", "Bus", "Berg", "Zug", "Fisch", "Apfel", "Uhr", "Hand", "Buch", "Kind"];
-const longWords = ["Akademie", "Telefonnummer", "Melodie", "Banane", "Fotografie", "Universität", "Regenbogen", "Schokolade", "Straßenbahn", "Kreisverkehr"];
+const shortWords = [
+  "Hund",
+  "Boot",
+  "Haus",
+  "Stuhl",
+  "Bus",
+  "Berg",
+  "Zug",
+  "Fisch",
+  "Apfel",
+  "Uhr",
+  "Hand",
+  "Buch",
+  "Kind",
+];
+const longWords = [
+  "Akademie",
+  "Telefonnummer",
+  "Melodie",
+  "Banane",
+  "Fotografie",
+  "Universität",
+  "Regenbogen",
+  "Schokolade",
+  "Straßenbahn",
+  "Kreisverkehr",
+];
 
 type TestType = "digits" | "syllables" | "wordlength";
 
@@ -29,10 +54,16 @@ export default function PhonologicalApp() {
   const [wordCondition, setWordCondition] = useState<"short" | "long">("short");
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // neu:
+  // Name/Feedback/Overlay
   const [participantName, setParticipantName] = useState<string>("");
   const [showReport, setShowReport] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+
+  // Geschwindigkeits-Schieber (bereits vorhanden)
+  const [speechRate, setSpeechRate] = useState<number>(1.0);
+
+  // NEU: Pause zwischen Ansagen (0–1500 ms)
+  const [pauseMs, setPauseMs] = useState<number>(400);
 
   function makeSequence(len: number, pool: string[]) {
     const seq: string[] = [];
@@ -54,32 +85,33 @@ export default function PhonologicalApp() {
       const deVoice = voices.find((v) => v.lang.startsWith("de"));
       if (deVoice) utter.voice = deVoice;
 
-      // kleine Feinjustierung: "ba" etwas langsamer, weil TTS das gern verschluckt
+      // „ba“ minimal langsamer, sonst Rate aus Slider
+      let rate = speechRate;
       if (text.toLowerCase() === "ba") {
-        utter.rate = 0.8;
-      } else {
-        utter.rate = 0.9;
+        rate = Math.max(0.5, speechRate - 0.1);
       }
+      utter.rate = rate;
 
-      utter.onend = () => {
-        resolve();
-      };
+      utter.onend = () => resolve();
       window.speechSynthesis.speak(utter);
     });
   }
 
-async function presentSequence(seq: string[]) {
-  setIsSpeaking(true);
+  async function presentSequence(seq: string[]) {
+    setIsSpeaking(true);
 
-  // NEU: kurze Vorbereitungs-Pause vor der ERSTEN Ansage
-  await new Promise((r) => setTimeout(r, 1500)); // 1500 = 1,5 Sekunden, kannst du auf 2000 stellen
+    // kurze Vorbereitungs-Pause vor der ERSTEN Ansage (1,5 s)
+    await new Promise((r) => setTimeout(r, 1500));
 
-  for (const item of seq) {
-    await speakItem(item);
-    await new Promise((r) => setTimeout(r, 400));
+    for (const item of seq) {
+      await speakItem(item);
+      // NEU: variable Pause zwischen Items (0–1500 ms)
+      if (pauseMs > 0) {
+        await new Promise((r) => setTimeout(r, pauseMs));
+      }
+    }
+    setIsSpeaking(false);
   }
-  setIsSpeaking(false);
-}
 
   async function startTrial() {
     if (phase !== "idle" && phase !== "feedback") return;
@@ -155,14 +187,12 @@ async function presentSequence(seq: string[]) {
     setPhase("feedback");
   }
 
-  // beim Test-Wechsel alles zurück
   useEffect(() => {
     setCurrentLength(2);
     setPhase("idle");
     setUserResponse([]);
   }, [activeTest]);
 
-  // kleine Hilfsfunktionen für die Auswertung
   const totalCorrectDigits = results.filter((r) => r.test === "digits" && r.correct).length;
   const totalCorrectSyllables = results.filter((r) => r.test === "syllables" && r.correct).length;
   const totalCorrectWords = results.filter((r) => r.test === "wordlength" && r.correct).length;
@@ -301,6 +331,46 @@ async function presentSequence(seq: string[]) {
         </div>
 
         <div className="right-panel">
+          {/* Geschwindigkeits-Schieber */}
+          <div className="card">
+            <h2>Ansagegeschwindigkeit</h2>
+            <div style={{ display: "grid", gap: 8 }}>
+              <input
+                type="range"
+                min={0.6}
+                max={1.4}
+                step={0.05}
+                value={speechRate}
+                onChange={(e) => setSpeechRate(Number(e.target.value))}
+              />
+              <div style={{ fontSize: 12, opacity: 0.8 }}>
+                Aktuell: <b>{speechRate.toFixed(2)}×</b>
+              </div>
+            </div>
+          </div>
+
+          {/* NEU: Pause-Schieber */}
+          <div className="card">
+            <h2>Pause zwischen Ansagen</h2>
+            <div style={{ display: "grid", gap: 8 }}>
+              <input
+                type="range"
+                min={0}
+                max={1500}
+                step={50}
+                value={pauseMs}
+                onChange={(e) => setPauseMs(Number(e.target.value))}
+              />
+              <div style={{ fontSize: 12, opacity: 0.8 }}>
+                {pauseMs === 0 ? (
+                  <>Direkt hintereinander (0 ms)</>
+                ) : (
+                  <>Aktuell: <b>{pauseMs}</b> ms (max. 1500 ms)</>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="card">
             <h2>Auswertung</h2>
             <p>Letzte Durchläufe (max. 50):</p>
@@ -335,16 +405,58 @@ async function presentSequence(seq: string[]) {
             <textarea
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              placeholder="Wie war die Aufgabe? War die Stimme verständlich? ..."
+              placeholder="Wie war die Aufgabe? Was sollen wir anpassen? ..."
             />
           </div>
         </div>
       </main>
 
+      {/* --- Impressum & Projekt-Infos --- */}
+<footer className="site-footer">
+  <div className="footer-inner">
+    <div className="footer-col">
+      <p className="footer-title">Impressum</p>
+      <p>
+        Herausgeber: <strong>Dennis Eustermann</strong><br />
+        E-Mail:{" "}
+        <a href="mailto:Dennis.Eustermann@mailbox.tu-dresden.de">
+          Dennis.Eustermann@mailbox.tu-dresden.de
+        </a>
+      </p>
+      <p className="footer-copy">
+        © {new Date().getFullYear()} Dennis Eustermann
+      </p>
+    </div>
+
+    <div className="footer-col">
+      <p className="footer-title">Projekt</p>
+      <p>
+        <em>„Gedächtnis und Aufmerksamkeit in Kindheit und Jugend“</em><br />
+        Technische Universität Dresden
+      </p>
+      <ul className="footer-links">
+        <li>
+          <a href="https://corsi-app.vercel.app" target="_blank" rel="noreferrer">
+            Corsi-Block-App
+          </a>
+        </li>
+        <li>
+          <a href="https://phon-loop-app.vercel.app" target="_blank" rel="noreferrer">
+            Phonologische Schleife
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
       {showReport && (
         <div className="overlay">
           <div className="overlay-content">
-            <h2>Übersicht {participantName ? `für ${participantName}` : ""}</h2>
+            <h2>
+              Übersicht {participantName ? `für ${participantName}` : ""}
+            </h2>
             <p>Richtige Durchläufe pro Test:</p>
             <div className="bar-row">
               <span>Zahlenspanne</span>
