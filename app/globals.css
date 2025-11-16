@@ -442,4 +442,40 @@ button:hover {
     align-items: start;
   }
 }
+/* --- Footer App-Karten (Variante B) --- */
+
+.footer-apps {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.app-card {
+  display: block;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  transition: 0.2s ease;
+  text-decoration: none;
+}
+
+.app-card:hover {
+  background: #eef2ff;
+  border-color: #4f46e5;
+  transform: translateY(-3px);
+}
+
+.app-title {
+  font-weight: 600;
+  color: #4f46e5;
+  font-size: 15px;
+}
+
+.app-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
 

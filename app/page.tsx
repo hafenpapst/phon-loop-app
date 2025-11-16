@@ -147,7 +147,7 @@ function makeSequence(len: number, pool: string[]) {
       // Rate aus Slider; "ba" minimal langsamer
       let rate = speechRate ?? 1.0;
       if (text.toLowerCase() === "ba") {
-        rate = Math.max(0.5, rate - 0.1);
+        rate = Math.max(0.3, rate - 0.1);
       }
       utter.rate = rate;
       utter.volume = 1;
@@ -422,7 +422,7 @@ function makeSequence(len: number, pool: string[]) {
             <div style={{ display: "grid", gap: 8 }}>
               <input
                 type="range"
-                min={0.6}
+                min={0.3}
                 max={1.4}
                 step={0.05}
                 value={speechRate}
@@ -521,18 +521,27 @@ function makeSequence(len: number, pool: string[]) {
               <br />
               Technische Universität Dresden
             </p>
-            <ul className="footer-links">
-              <li>
-                <a href="https://corsi-app.vercel.app" target="_blank" rel="noreferrer">
-                  Corsi-Block-App
-                </a>
-              </li>
-              <li>
-                <a href="https://mental-rotation-web.vercel.app/" target="_blank" rel="noreferrer">
-                  Mentale Rotation
-                </a>
-              </li>
-            </ul>
+           <div className="footer-apps">
+  <a 
+    href="https://corsi-app.vercel.app"
+    target="_blank"
+    rel="noreferrer"
+    className="app-card"
+  >
+    <span className="app-title">Corsi-Block-App</span>
+    <span className="app-desc">Visuell-räumliche Arbeitsgedächtnisaufgabe</span>
+  </a>
+
+  <a 
+    href="https://mental-rotation-web.vercel.app"
+    target="_blank"
+    rel="noreferrer"
+    className="app-card"
+  >
+    <span className="app-title">Mental Rotation</span>
+    <span className="app-desc">Räumliche Vorstellung & mentale Drehung</span>
+  </a>
+</div> 
           </div>
         </div>
       </footer>
