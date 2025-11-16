@@ -70,30 +70,28 @@ export default function PhonologicalApp() {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number | null>(null);
 
   // Sequenz ohne direkte Wiederholung
-  function makeSequence(len: number, pool: string[]) {
-    const seq: string[] = [];
-    let prev: string | undefined = undefined;
+function makeSequence(len: number, pool: string[]) {
+  const seq: string[] = [];
+  let available = [...pool]; // Kopie des Pools
 
-    for (let i = 0; i < len; i++) {
-      let next: string;
-
-      if (pool.length === 1) {
-        next = pool[0];
-      } else {
-        let tries = 0;
-        do {
-          const idx = Math.floor(Math.random() * pool.length);
-          next = pool[idx];
-          tries++;
-        } while (next === prev && tries < 20);
-      }
-
-      seq.push(next);
-      prev = next;
+  for (let i = 0; i < len; i++) {
+    // Wenn wir alle möglichen Items einmal benutzt haben,
+    // Pool wieder auffüllen (jetzt dürfen Wiederholungen vorkommen)
+    if (available.length === 0) {
+      available = [...pool];
     }
 
-    return seq;
+    const idx = Math.floor(Math.random() * available.length);
+    const next = available[idx];
+
+    seq.push(next);
+    // dieses Item aus "available" entfernen, damit es in dieser Runde nicht nochmal kommt
+    available.splice(idx, 1);
   }
+
+  return seq;
+}
+
 
   // Mobile-Fix: Stimmen laden + Engine "anwärmen" + Stimmen in State
   async function ensureTtsReady(): Promise<void> {
