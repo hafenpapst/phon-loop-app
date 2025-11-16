@@ -529,7 +529,7 @@ function makeSequence(len: number, pool: string[]) {
               </li>
               <li>
                 <a href="https://mental-rotation-web.vercel.app/" target="_blank" rel="noreferrer">
-                  Phonologische Schleife
+                  Mentale Rotation
                 </a>
               </li>
             </ul>
