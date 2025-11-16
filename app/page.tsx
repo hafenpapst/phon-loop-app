@@ -18,6 +18,13 @@ const shortWords = [
   "Hand",
   "Buch",
   "Kind",
+  "Baum",
+  "Tisch",
+  "Mond",
+  "Sonne",
+  "Blume",
+  "Wolke",
+  "Auto",
 ];
 const longWords = [
   "Akademie",
@@ -30,6 +37,16 @@ const longWords = [
   "Schokolade",
   "Straßenbahn",
   "Kreisverkehr",
+  "Wasserflasche",
+  "Feuerwehrmann",
+  "Krankenhaus",
+  "Bibliothek",
+  "Abenteuer",
+  "Schmetterling",
+  "Erdbeere",
+  "Zahnarztpraxis",
+  "Fernsehsendung",
+  "Computerspiel",
 ];
 
 type TestType = "digits" | "syllables" | "wordlength";
@@ -41,7 +58,7 @@ interface TrialResult {
   correct: boolean;
   length: number;
   condition?: "short" | "long";
-  time: string;
+  duration: number | null; // Antwortdauer in Sekunden
 }
 
 export default function PhonologicalApp() {
@@ -59,39 +76,39 @@ export default function PhonologicalApp() {
   const [showReport, setShowReport] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
 
-  // Geschwindigkeits-Schieber
+  // Geschwindigkeit & Pause
   const [speechRate, setSpeechRate] = useState<number>(1.0);
-
-  // Pause zwischen Ansagen (0–1500 ms)
   const [pauseMs, setPauseMs] = useState<number>(400);
 
   // Stimmen-Auswahl
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number | null>(null);
 
-  // Sequenz ohne direkte Wiederholung
-function makeSequence(len: number, pool: string[]) {
-  const seq: string[] = [];
-  let available = [...pool]; // Kopie des Pools
+  // Timing nur für Antwortphase
+  const [startTime, setStartTime] = useState<number | null>(null);
 
-  for (let i = 0; i < len; i++) {
-    // Wenn wir alle möglichen Items einmal benutzt haben,
-    // Pool wieder auffüllen (jetzt dürfen Wiederholungen vorkommen)
-    if (available.length === 0) {
-      available = [...pool];
+  // Sequenz ohne Wiederholungen, bis alle Items einmal benutzt wurden
+  function makeSequence(len: number, pool: string[]) {
+    const seq: string[] = [];
+    let available = [...pool]; // Kopie des Pools
+
+    for (let i = 0; i < len; i++) {
+      if (available.length === 0) {
+        // Pool wieder auffüllen, wenn alles einmal dran war
+        available = [...pool];
+      }
+
+      const idx = Math.floor(Math.random() * available.length);
+      const next = available[idx];
+
+      seq.push(next);
+      // Verhindert Doppeltes innerhalb der gleichen Sequenz,
+      // bis einmal alles verbraucht ist
+      available.splice(idx, 1);
     }
 
-    const idx = Math.floor(Math.random() * available.length);
-    const next = available[idx];
-
-    seq.push(next);
-    // dieses Item aus "available" entfernen, damit es in dieser Runde nicht nochmal kommt
-    available.splice(idx, 1);
+    return seq;
   }
-
-  return seq;
-}
-
 
   // Mobile-Fix: Stimmen laden + Engine "anwärmen" + Stimmen in State
   async function ensureTtsReady(): Promise<void> {
@@ -235,10 +252,13 @@ function makeSequence(len: number, pool: string[]) {
     const seq = makeSequence(currentLength, pool);
     setCurrentSeq(seq);
     setUserResponse([]);
-    setPhase("presenting");
+    setStartTime(null); // sicherheitshalber reset
 
+    setPhase("presenting");
     await presentSequence(seq);
 
+    // ⬇️ HIER: Recall beginnt → Zeit startet JETZT
+    setStartTime(Date.now());
     setPhase("recall");
   }
 
@@ -273,6 +293,9 @@ function makeSequence(len: number, pool: string[]) {
       resp.length === target.length &&
       resp.every((r, idx) => r.toLowerCase() === target[idx].toLowerCase());
 
+    const durationSec =
+      startTime != null ? (Date.now() - startTime) / 1000 : null;
+
     const thisResult: TrialResult = {
       test: activeTest,
       target,
@@ -280,7 +303,7 @@ function makeSequence(len: number, pool: string[]) {
       correct,
       length: target.length,
       condition: activeTest === "wordlength" ? wordCondition : undefined,
-      time: new Date().toLocaleTimeString(),
+      duration: durationSec,
     };
 
     setResults((prev) => [thisResult, ...prev].slice(0, 50));
@@ -298,6 +321,7 @@ function makeSequence(len: number, pool: string[]) {
     setCurrentLength(2);
     setPhase("idle");
     setUserResponse([]);
+    setStartTime(null);
   }, [activeTest]);
 
   const totalCorrectDigits = results.filter((r) => r.test === "digits" && r.correct).length;
@@ -522,7 +546,8 @@ function makeSequence(len: number, pool: string[]) {
                         ? "Silben"
                         : "Wortlänge"}
                     </strong>{" "}
-                    {r.condition ? `(${r.condition})` : ""} – Länge {r.length} – {r.time}
+                    {r.condition ? `(${r.condition})` : ""} – Länge {r.length} –{" "}
+                    Dauer: {r.duration != null ? r.duration.toFixed(2) : "—"} s
                   </div>
                   <div>Ziel: {r.target.join(", ")}</div>
                   <div>Antwort: {r.response.join(", ") || "—"}</div>
@@ -579,7 +604,9 @@ function makeSequence(len: number, pool: string[]) {
                 className="app-card"
               >
                 <span className="app-title">Corsi-Block-App</span>
-                <span className="app-desc">Visuell-räumliche Arbeitsgedächtnisaufgabe</span>
+                <span className="app-desc">
+                  Visuell-räumliche Arbeitsgedächtnisaufgabe
+                </span>
               </a>
 
               <a
@@ -589,7 +616,9 @@ function makeSequence(len: number, pool: string[]) {
                 className="app-card"
               >
                 <span className="app-title">Mental Rotation</span>
-                <span className="app-desc">Räumliche Vorstellung & mentale Drehung</span>
+                <span className="app-desc">
+                  Räumliche Vorstellung & mentale Drehung
+                </span>
               </a>
             </div>
           </div>
