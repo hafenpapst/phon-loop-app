@@ -65,14 +65,33 @@ export default function PhonologicalApp() {
   // Pause zwischen Ansagen (0–1500 ms)
   const [pauseMs, setPauseMs] = useState<number>(400);
 
-  function makeSequence(len: number, pool: string[]) {
-    const seq: string[] = [];
-    for (let i = 0; i < len; i++) {
-      const idx = Math.floor(Math.random() * pool.length);
-      seq.push(pool[idx]);
+function makeSequence(len: number, pool: string[]) {
+  const seq: string[] = [];
+  let prev: string | undefined = undefined;
+
+  for (let i = 0; i < len; i++) {
+    let next: string;
+
+    // Falls es nur 1 Element gäbe (bei dir nicht der Fall, aber zur Sicherheit)
+    if (pool.length === 1) {
+      next = pool[0];
+    } else {
+      // so lange ziehen, bis wir etwas haben, das sich NICHT direkt wiederholt
+      let tries = 0;
+      do {
+        const idx = Math.floor(Math.random() * pool.length);
+        next = pool[idx];
+        tries++;
+      } while (next === prev && tries < 20);
     }
-    return seq;
+
+    seq.push(next);
+    prev = next;
   }
+
+  return seq;
+}
+
 
   // === Mobile-Fix: Stimmen laden + Engine "anwärmen" ===
   async function ensureTtsReady(): Promise<void> {
@@ -509,7 +528,7 @@ export default function PhonologicalApp() {
                 </a>
               </li>
               <li>
-                <a href="https://phon-loop-app.vercel.app" target="_blank" rel="noreferrer">
+                <a href="https://mental-rotation-web.vercel.app/" target="_blank" rel="noreferrer">
                   Phonologische Schleife
                 </a>
               </li>
