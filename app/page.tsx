@@ -59,10 +59,10 @@ export default function PhonologicalApp() {
   const [showReport, setShowReport] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
 
-  // Geschwindigkeits-Schieber (bereits vorhanden)
+  // Geschwindigkeits-Schieber
   const [speechRate, setSpeechRate] = useState<number>(1.0);
 
-  // NEU: Pause zwischen Ansagen (0–1500 ms)
+  // Pause zwischen Ansagen (0–1500 ms)
   const [pauseMs, setPauseMs] = useState<number>(400);
 
   function makeSequence(len: number, pool: string[]) {
@@ -74,38 +74,101 @@ export default function PhonologicalApp() {
     return seq;
   }
 
+  // === Mobile-Fix: Stimmen laden + Engine "anwärmen" ===
+  async function ensureTtsReady(): Promise<void> {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+
+    // a) auf Stimmen warten (iOS lädt asynchron)
+    await new Promise<void>((resolve) => {
+      const voices = synth.getVoices();
+      if (voices && voices.length) return resolve();
+      const timer = setTimeout(() => resolve(), 1200); // Fallback
+      const handler = () => {
+        clearTimeout(timer);
+        synth.onvoiceschanged = null;
+        resolve();
+      };
+      synth.onvoiceschanged = handler;
+    });
+
+    // b) Warmup – kurzer stummer Utterance im Klick-Kontext
+    await new Promise<void>((resolve) => {
+      try {
+        const u = new SpeechSynthesisUtterance("bereit");
+        u.lang = "de-DE";
+        u.volume = 0; // stumm
+        u.rate = 1.0;
+        const t = setTimeout(() => resolve(), 300); // Safety
+        u.onend = () => {
+          clearTimeout(t);
+          resolve();
+        };
+        synth.speak(u);
+      } catch {
+        resolve();
+      }
+    });
+  }
+
   function speakItem(text: string): Promise<void> {
     return new Promise((resolve) => {
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
         resolve();
         return;
       }
+      const synth = window.speechSynthesis;
+
       const utter = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-      const deVoice = voices.find((v) => v.lang.startsWith("de"));
+      utter.lang = "de-DE";
+      const voices = synth.getVoices();
+      const deVoice = voices.find((v) => v.lang?.toLowerCase().startsWith("de"));
       if (deVoice) utter.voice = deVoice;
 
-      // „ba“ minimal langsamer, sonst Rate aus Slider
-      let rate = speechRate;
+      // Rate aus Slider; "ba" minimal langsamer
+      let rate = speechRate ?? 1.0;
       if (text.toLowerCase() === "ba") {
-        rate = Math.max(0.5, speechRate - 0.1);
+        rate = Math.max(0.5, rate - 0.1);
       }
       utter.rate = rate;
+      utter.volume = 1;
+      utter.pitch = 1;
 
-      utter.onend = () => resolve();
-      window.speechSynthesis.speak(utter);
+      // Safety: falls onend auf Mobile nicht feuert
+      const maxDur = Math.max(
+        800,
+        Math.min(2500, Math.round((text.length + 2) * (900 / rate)))
+      );
+      const timeout = setTimeout(() => resolve(), maxDur);
+
+      utter.onend = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      try {
+        synth.speak(utter);
+      } catch {
+        clearTimeout(timeout);
+        resolve();
+      }
     });
   }
 
   async function presentSequence(seq: string[]) {
     setIsSpeaking(true);
 
+    // alte Warteschlange leeren (verhindert Blockaden auf Mobile)
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
     // kurze Vorbereitungs-Pause vor der ERSTEN Ansage (1,5 s)
     await new Promise((r) => setTimeout(r, 1500));
 
     for (const item of seq) {
       await speakItem(item);
-      // NEU: variable Pause zwischen Items (0–1500 ms)
+      // variable Pause zwischen Items (0–1500 ms)
       if (pauseMs > 0) {
         await new Promise((r) => setTimeout(r, pauseMs));
       }
@@ -115,6 +178,9 @@ export default function PhonologicalApp() {
 
   async function startTrial() {
     if (phase !== "idle" && phase !== "feedback") return;
+
+    // TTS im Button-Klick vorbereiten (wichtig für iOS/Android)
+    await ensureTtsReady();
 
     let pool: string[] = [];
     if (activeTest === "digits") {
@@ -349,7 +415,7 @@ export default function PhonologicalApp() {
             </div>
           </div>
 
-          {/* NEU: Pause-Schieber */}
+          {/* Pause-Schieber */}
           <div className="card">
             <h2>Pause zwischen Ansagen</h2>
             <div style={{ display: "grid", gap: 8 }}>
@@ -365,7 +431,9 @@ export default function PhonologicalApp() {
                 {pauseMs === 0 ? (
                   <>Direkt hintereinander (0 ms)</>
                 ) : (
-                  <>Aktuell: <b>{pauseMs}</b> ms (max. 1500 ms)</>
+                  <>
+                    Aktuell: <b>{pauseMs}</b> ms (max. 1500 ms)
+                  </>
                 )}
               </div>
             </div>
@@ -412,51 +480,48 @@ export default function PhonologicalApp() {
       </main>
 
       {/* --- Impressum & Projekt-Infos --- */}
-<footer className="site-footer">
-  <div className="footer-inner">
-    <div className="footer-col">
-      <p className="footer-title">Impressum</p>
-      <p>
-        Herausgeber: <strong>Dennis Eustermann</strong><br />
-        E-Mail:{" "}
-        <a href="mailto:Dennis.Eustermann@mailbox.tu-dresden.de">
-          Dennis.Eustermann@mailbox.tu-dresden.de
-        </a>
-      </p>
-      <p className="footer-copy">
-        © {new Date().getFullYear()} Dennis Eustermann
-      </p>
-    </div>
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div className="footer-col">
+            <p className="footer-title">Impressum</p>
+            <p>
+              Herausgeber: <strong>Dennis Eustermann</strong>
+              <br />
+              E-Mail:{" "}
+              <a href="mailto:Dennis.Eustermann@mailbox.tu-dresden.de">
+                Dennis.Eustermann@mailbox.tu-dresden.de
+              </a>
+            </p>
+            <p className="footer-copy">© {new Date().getFullYear()} Dennis Eustermann</p>
+          </div>
 
-    <div className="footer-col">
-      <p className="footer-title">Projekt</p>
-      <p>
-        <em>„Gedächtnis und Aufmerksamkeit in Kindheit und Jugend“</em><br />
-        Technische Universität Dresden
-      </p>
-      <ul className="footer-links">
-        <li>
-          <a href="https://corsi-app.vercel.app" target="_blank" rel="noreferrer">
-            Corsi-Block-App
-          </a>
-        </li>
-        <li>
-          <a href="https://phon-loop-app.vercel.app" target="_blank" rel="noreferrer">
-            Phonologische Schleife
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</footer>
-
+          <div className="footer-col">
+            <p className="footer-title">Projekt</p>
+            <p>
+              <em>„Gedächtnis und Aufmerksamkeit in Kindheit und Jugend“</em>
+              <br />
+              Technische Universität Dresden
+            </p>
+            <ul className="footer-links">
+              <li>
+                <a href="https://corsi-app.vercel.app" target="_blank" rel="noreferrer">
+                  Corsi-Block-App
+                </a>
+              </li>
+              <li>
+                <a href="https://phon-loop-app.vercel.app" target="_blank" rel="noreferrer">
+                  Phonologische Schleife
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </footer>
 
       {showReport && (
         <div className="overlay">
           <div className="overlay-content">
-            <h2>
-              Übersicht {participantName ? `für ${participantName}` : ""}
-            </h2>
+            <h2>Übersicht {participantName ? `für ${participantName}` : ""}</h2>
             <p>Richtige Durchläufe pro Test:</p>
             <div className="bar-row">
               <span>Zahlenspanne</span>
