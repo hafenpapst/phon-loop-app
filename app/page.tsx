@@ -65,44 +65,47 @@ export default function PhonologicalApp() {
   // Pause zwischen Ansagen (0–1500 ms)
   const [pauseMs, setPauseMs] = useState<number>(400);
 
-function makeSequence(len: number, pool: string[]) {
-  const seq: string[] = [];
-  let prev: string | undefined = undefined;
+  // Stimmen-Auswahl
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number | null>(null);
 
-  for (let i = 0; i < len; i++) {
-    let next: string;
+  // Sequenz ohne direkte Wiederholung
+  function makeSequence(len: number, pool: string[]) {
+    const seq: string[] = [];
+    let prev: string | undefined = undefined;
 
-    // Falls es nur 1 Element gäbe (bei dir nicht der Fall, aber zur Sicherheit)
-    if (pool.length === 1) {
-      next = pool[0];
-    } else {
-      // so lange ziehen, bis wir etwas haben, das sich NICHT direkt wiederholt
-      let tries = 0;
-      do {
-        const idx = Math.floor(Math.random() * pool.length);
-        next = pool[idx];
-        tries++;
-      } while (next === prev && tries < 20);
+    for (let i = 0; i < len; i++) {
+      let next: string;
+
+      if (pool.length === 1) {
+        next = pool[0];
+      } else {
+        let tries = 0;
+        do {
+          const idx = Math.floor(Math.random() * pool.length);
+          next = pool[idx];
+          tries++;
+        } while (next === prev && tries < 20);
+      }
+
+      seq.push(next);
+      prev = next;
     }
 
-    seq.push(next);
-    prev = next;
+    return seq;
   }
 
-  return seq;
-}
-
-
-  // === Mobile-Fix: Stimmen laden + Engine "anwärmen" ===
+  // Mobile-Fix: Stimmen laden + Engine "anwärmen" + Stimmen in State
   async function ensureTtsReady(): Promise<void> {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const synth = window.speechSynthesis;
 
-    // a) auf Stimmen warten (iOS lädt asynchron)
+    // auf Stimmen warten (iOS lädt asynchron)
     await new Promise<void>((resolve) => {
-      const voices = synth.getVoices();
-      if (voices && voices.length) return resolve();
-      const timer = setTimeout(() => resolve(), 1200); // Fallback
+      const voicesNow = synth.getVoices();
+      if (voicesNow && voicesNow.length) return resolve();
+
+      const timer = setTimeout(() => resolve(), 1200);
       const handler = () => {
         clearTimeout(timer);
         synth.onvoiceschanged = null;
@@ -111,14 +114,23 @@ function makeSequence(len: number, pool: string[]) {
       synth.onvoiceschanged = handler;
     });
 
-    // b) Warmup – kurzer stummer Utterance im Klick-Kontext
+    const voices = synth.getVoices();
+    const deVoices = voices.filter((v) =>
+      v.lang?.toLowerCase().startsWith("de")
+    );
+    setAvailableVoices(deVoices);
+    if (selectedVoiceIndex === null && deVoices.length > 0) {
+      setSelectedVoiceIndex(0);
+    }
+
+    // Warmup – kurzer stummer Utterance im Klick-Kontext
     await new Promise<void>((resolve) => {
       try {
         const u = new SpeechSynthesisUtterance("bereit");
         u.lang = "de-DE";
-        u.volume = 0; // stumm
+        u.volume = 0;
         u.rate = 1.0;
-        const t = setTimeout(() => resolve(), 300); // Safety
+        const t = setTimeout(() => resolve(), 300);
         u.onend = () => {
           clearTimeout(t);
           resolve();
@@ -140,11 +152,23 @@ function makeSequence(len: number, pool: string[]) {
 
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "de-DE";
-      const voices = synth.getVoices();
-      const deVoice = voices.find((v) => v.lang?.toLowerCase().startsWith("de"));
-      if (deVoice) utter.voice = deVoice;
 
-      // Rate aus Slider; "ba" minimal langsamer
+      let voiceToUse: SpeechSynthesisVoice | undefined;
+
+      if (availableVoices.length > 0 && selectedVoiceIndex !== null) {
+        voiceToUse = availableVoices[selectedVoiceIndex]!;
+      } else {
+        const voices = synth.getVoices();
+        voiceToUse = voices.find((v) =>
+          v.lang?.toLowerCase().startsWith("de")
+        );
+      }
+
+      if (voiceToUse) {
+        utter.voice = voiceToUse;
+      }
+
+      // Rate aus Slider; „ba“ etwas langsamer, aber nie unter 0.3
       let rate = speechRate ?? 1.0;
       if (text.toLowerCase() === "ba") {
         rate = Math.max(0.3, rate - 0.1);
@@ -177,28 +201,28 @@ function makeSequence(len: number, pool: string[]) {
   async function presentSequence(seq: string[]) {
     setIsSpeaking(true);
 
-    // alte Warteschlange leeren (verhindert Blockaden auf Mobile)
+    // alte Warteschlange leeren
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
 
-    // kurze Vorbereitungs-Pause vor der ERSTEN Ansage (1,5 s)
+    // Vorbereitungs-Pause vor der ersten Ansage
     await new Promise((r) => setTimeout(r, 1500));
 
     for (const item of seq) {
       await speakItem(item);
-      // variable Pause zwischen Items (0–1500 ms)
       if (pauseMs > 0) {
         await new Promise((r) => setTimeout(r, pauseMs));
       }
     }
+
     setIsSpeaking(false);
   }
 
   async function startTrial() {
     if (phase !== "idle" && phase !== "feedback") return;
 
-    // TTS im Button-Klick vorbereiten (wichtig für iOS/Android)
+    // TTS vorbereiten (wichtig für Mobile)
     await ensureTtsReady();
 
     let pool: string[] = [];
@@ -434,6 +458,33 @@ function makeSequence(len: number, pool: string[]) {
             </div>
           </div>
 
+          {/* Stimmen-Auswahl */}
+          <div className="card">
+            <h2>Stimme</h2>
+            {availableVoices.length === 0 ? (
+              <p style={{ fontSize: 12, opacity: 0.8 }}>
+                Stimmen werden geladen… (ggf. einmal „Start“ drücken oder Seite neu laden)
+              </p>
+            ) : (
+              <select
+                value={selectedVoiceIndex ?? 0}
+                onChange={(e) => setSelectedVoiceIndex(Number(e.target.value))}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  fontSize: 13,
+                }}
+              >
+                {availableVoices.map((v, idx) => (
+                  <option key={v.voiceURI} value={idx}>
+                    {v.name} ({v.lang})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Pause-Schieber */}
           <div className="card">
             <h2>Pause zwischen Ansagen</h2>
@@ -521,27 +572,28 @@ function makeSequence(len: number, pool: string[]) {
               <br />
               Technische Universität Dresden
             </p>
-           <div className="footer-apps">
-  <a 
-    href="https://corsi-app.vercel.app"
-    target="_blank"
-    rel="noreferrer"
-    className="app-card"
-  >
-    <span className="app-title">Corsi-Block-App</span>
-    <span className="app-desc">Visuell-räumliche Arbeitsgedächtnisaufgabe</span>
-  </a>
 
-  <a 
-    href="https://mental-rotation-web.vercel.app"
-    target="_blank"
-    rel="noreferrer"
-    className="app-card"
-  >
-    <span className="app-title">Mental Rotation</span>
-    <span className="app-desc">Räumliche Vorstellung & mentale Drehung</span>
-  </a>
-</div> 
+            <div className="footer-apps">
+              <a
+                href="https://corsi-app.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                className="app-card"
+              >
+                <span className="app-title">Corsi-Block-App</span>
+                <span className="app-desc">Visuell-räumliche Arbeitsgedächtnisaufgabe</span>
+              </a>
+
+              <a
+                href="https://mental-rotation-web.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                className="app-card"
+              >
+                <span className="app-title">Mental Rotation</span>
+                <span className="app-desc">Räumliche Vorstellung & mentale Drehung</span>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
