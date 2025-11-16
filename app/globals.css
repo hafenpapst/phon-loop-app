@@ -4,15 +4,15 @@
 
 /* ===== Farb-Token (helles Theme, klare Kontraste) ===== */
 :root {
-  --bg: #f8fafc; /* Seitenhintergrund */
-  --bg-grad-1: #ffffff;
+  --bg: #ee4f4f; /* Seitenhintergrund */
+  --bg-grad-1: #eb60a5;
   --bg-grad-2: #f7fafc;
-  --bg-grad-3: #eef2f7;
+  --bg-grad-3: #8a1e60;
 
   --text: #0f172a; /* Grundtext (fast schwarz) */
   --muted: #475569; /* Sekundärtext (graublau) */
 
-  --card: #ffffff;
+  --card: #41cc80;
   --card-border: rgba(15, 23, 42, 0.08);
   --shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 
@@ -158,7 +158,7 @@ p {
 
 .tab.active {
   background: var(--accent);
-  color: #fff;
+  color: #ffffff;
   border-color: transparent;
 }
 
@@ -360,7 +360,7 @@ button:hover {
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: #f89bdc;
 }
 
 .bar-fill {
@@ -396,7 +396,7 @@ button:hover {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
-  background: #fff;
+  background: #ec9e9e;
   border: 1px solid var(--card-border);
   border-radius: 12px;
   padding: 10px 12px;
@@ -432,7 +432,7 @@ button:hover {
 
 .footer-copy {
   font-size: 0.8rem;
-  color: #8892a6;
+  color: #97e0d7;
   margin-top: 6px;
 }
 
@@ -452,7 +452,7 @@ button:hover {
 
 .app-card {
   display: block;
-  background: #f9fafb;
+  background: #fa8397;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 12px 16px;
