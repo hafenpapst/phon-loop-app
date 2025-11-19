@@ -333,7 +333,7 @@ export default function PhonologicalApp() {
       <header className="topbar">
         <div>
           <h1>Phonologische Schleife – Teste dein Arbeitsgedächtnis</h1>
-          <p>3 Aufgaben: Zahlenspanne, Silben, Wortlänge / Ähnlichkeit</p>
+          <p>3 Aufgaben: Zahlenspanne, Ähnlichkeitseffekt, Wortlängeneffekt</p>
         </div>
         <div className="name-box">
           <label>
@@ -360,21 +360,21 @@ export default function PhonologicalApp() {
               onClick={() => setActiveTest("syllables")}
               className={activeTest === "syllables" ? "tab active" : "tab"}
             >
-              Silben-Span
+              Ähnlichkeitseffekt
             </button>
             <button
               onClick={() => setActiveTest("wordlength")}
               className={activeTest === "wordlength" ? "tab active" : "tab"}
             >
-              Wortlänge / Ähnlichkeit
+              Wortlängeneffekt
             </button>
           </div>
 
           <div className="card big">
             <h2>
               {activeTest === "digits" && "Zahlenspanne"}
-              {activeTest === "syllables" && "Silben-Span"}
-              {activeTest === "wordlength" && "Wortlänge / Ähnlichkeit"}
+              {activeTest === "syllables" && "Ähnlichkeitseffekt"}
+              {activeTest === "wordlength" && "Wortlängeneffekt"}
             </h2>
 
             {activeTest === "wordlength" && (
